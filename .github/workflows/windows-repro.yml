@@ -1,0 +1,95 @@
+name: q2501-windows-repro
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Workflow mode
+        required: true
+        default: reference
+        type: choice
+        options:
+          - reference
+          - verify
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ubuntu24.04 for WSL2
+        shell: pwsh
+        run: |
+          $distros = @(wsl.exe --list --quiet | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+          if ($distros -notcontains 'Ubuntu-24.04') {
+            wsl.exe --install --distribution Ubuntu-24.04 --no-launch --web-download
+            if ($LASTEXITCODE -ne 0) { throw 'Ubuntu24.04 installation failed' }
+          }
+          wsl.exe --set-default-version 2
+          if ($LASTEXITCODE -ne 0) { throw 'WSL2 default setup failed' }
+          wsl.exe -d Ubuntu-24.04 -- bash -lc 'uname -a'
+      - name: Record Windows and WSL host
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path evidence | Out-Null
+          $hostInfo = [ordered]@{
+            caption = (Get-CimInstance Win32_OperatingSystem).Caption
+            version = (Get-CimInstance Win32_OperatingSystem).Version
+            build = (Get-CimInstance Win32_OperatingSystem).BuildNumber
+            runner_image = $env:ImageOS
+            wsl_version = ((wsl.exe --version) -join "`n")
+            distribution = (wsl.exe -d Ubuntu-24.04 -- bash -lc 'source /etc/os-release; echo $PRETTY_NAME').Trim()
+            commit_sha = $env:GITHUB_SHA
+            workflow_run_id = $env:GITHUB_RUN_ID
+          }
+          $hostInfo | ConvertTo-Json | Set-Content -Encoding utf8NoBOM evidence/windows-host.json
+      - name: Install Apache Airflow in WSL2
+        shell: pwsh
+        run: |
+          $repoWindows = (Resolve-Path '.').Path
+          $drive = $repoWindows.Substring(0, 1).ToLowerInvariant()
+          $rest = $repoWindows.Substring(2).Replace('\', '/')
+          $repoWsl = "/mnt/$drive$rest"
+          wsl.exe -d Ubuntu-24.04 -- bash -lc "set -e; sudo apt-get update; sudo apt-get install -y curl; curl -LsSf https://astral.sh/uv/install.sh | sh; cd '$repoWsl'; `$HOME/.local/bin/uv python install 3.11; `$HOME/.local/bin/uv venv --python 3.11 .venv; `$HOME/.local/bin/uv pip install --python .venv/bin/python 'apache-airflow==2.10.5'"
+      - name: Generate Reference candidate
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'reference' }}
+        shell: pwsh
+        run: ./qa/wsl_wrapper.ps1 -Mode reference
+      - name: Verify attachment hashes
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'verify' }}
+        shell: pwsh
+        run: |
+          $repoWindows = (Resolve-Path '.').Path
+          $drive = $repoWindows.Substring(0, 1).ToLowerInvariant()
+          $rest = $repoWindows.Substring(2).Replace('\', '/')
+          $repoWsl = "/mnt/$drive$rest"
+          wsl.exe -d Ubuntu-24.04 -- bash -lc "cd '$repoWsl'; source .venv/bin/activate; python ./qa/verify_hashes.py"
+      - name: Block WSL external network
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'verify' }}
+        shell: pwsh
+        run: |
+          $repoWindows = (Resolve-Path '.').Path
+          $drive = $repoWindows.Substring(0, 1).ToLowerInvariant()
+          $rest = $repoWindows.Substring(2).Replace('\', '/')
+          $repoWsl = "/mnt/$drive$rest"
+          wsl.exe -d Ubuntu-24.04 -- bash -lc "sed -i 's/`r`$//' '$repoWsl/qa/block_network.sh'; bash '$repoWsl/qa/block_network.sh' '$repoWsl'"
+      - name: Verify final task in WSL2
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'verify' }}
+        shell: pwsh
+        run: ./qa/wsl_wrapper.ps1 -Mode verify
+      - name: Remove WSL network guard
+        if: always()
+        shell: pwsh
+        run: wsl.exe --shutdown
+      - name: Upload independent evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: q2501-windows-evidence
+          path: evidence/**
+          if-no-files-found: error
+          retention-days: 1

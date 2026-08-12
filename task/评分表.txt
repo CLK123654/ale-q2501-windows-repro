@@ -1,0 +1,97 @@
+总分100分。
+
+1. 完整交付可以读取
+分值： 8分
+优先级： Gate项
+所属层级： L1任务指令遵循层
+标准答案： 交付包包含dags、release、serialized和README.md。
+关键字段： 固定路径、文件格式、UTF-8可读性
+容差： 目录说明的措辞可以变化。
+失败边界： 任一主目录或候选DAG缺失，本项失败。
+可观察证据： 交付目录和各文件实际内容
+客观硬性标准： 所有固定路径存在且内容能够解析。
+阈值： 固定路径缺失数为0。
+
+2. 租户登记与阶段目录完整
+分值： 11分
+优先级： Gate项
+所属层级： L3输入数据导入与完整性层
+标准答案： 所有tenant_registry.csv租户都进入随包配置，stage_catalog.csv的sequence在租户内连续。
+关键字段： tenant_id、schedule、timezone、owner、dataset_uri、sequence、task_id
+容差： CSV行顺序可以变化，租户内的sequence与task_id对应不可变化。
+失败边界： 租户缺失、Dataset重复、阶段缺失或sequence断号，本项失败。
+可观察证据： dags/tenant_factory_config.json与release/dag_inventory.csv
+客观硬性标准： 输入租户集合与配置租户集合一致，每个阶段仅出现一次。
+阈值： 租户和阶段差异数都为0。
+
+3. 动态DAG注册正确
+分值： 17分
+优先级： 高权重项
+所属层级： L7产物结构与专业对象层
+标准答案： 每个租户形成tenant_<tenant_id>_daily，全部DAG以实际dag_id注册到globals。
+关键字段： dag_id、globals、start_date、schedule、catchup、owner、tags
+容差： 工厂函数名、局部变量和注释可以变化。
+失败边界： DagBag出现导入错误、DAG集合与租户集合不同或只留最后一张DAG，本项失败。
+可观察证据： dags/tenant_factory.py和release/dag_inventory.csv
+客观硬性标准： DagBag读取到的dag_id集合与输入租户逐一对应。
+阈值： 导入错误数为0，DAG集合差异数为0。
+
+4. 任务链和Dataset出口正确
+分值： 18分
+优先级： 高权重项
+所属层级： L6领域计算与专业规则层
+标准答案： 每张DAG按start、阶段目录声明次序、finish形成单链，finish仅发布对应dataset_uri。
+关键字段： task_chain、upstream_task_ids、downstream_task_ids、finish.outlets、dataset_uri
+容差： 创建任务的代码组织可以变化，任务名、次序和Dataset不可变化。
+失败边界： 任务排序、边或Dataset与输入任一处不同，本项失败。
+可观察证据： release/dag_inventory.csv与dags/tenant_factory_config.json
+客观硬性标准： task_chain可以回连stage_catalog.csv，Dataset出口可以回连tenant_registry.csv。
+阈值： 任务链与Dataset差异数都为0。
+
+5. 定向解析边界清楚
+分值： 17分
+优先级： 高权重项
+所属层级： L8运行验证与可执行行为层
+标准答案： 工厂读取get_parsing_context，对于已指定dag_id的解析只构造该DAG。
+关键字段： context.dag_id、candidate_id、built_dag_ids、requested_dag_id
+容差： 条件表达式可以变化，跳过操作必须位于DAG构造之前。
+失败边界： 定向解析构造了多张DAG、漏掉目标DAG或出现导入错误，本项失败。
+可观察证据： dags/tenant_factory.py与release/targeted_parse_inventory.csv
+客观硬性标准： 每行requested_dag_id与built_dag_ids一致。
+阈值： 每次定向解析的DAG数为1。
+
+6. 序列化结构与DAG清单一致
+分值： 14分
+优先级： 高权重项
+所属层级： L9跨产物一致性与可追溯层
+标准答案： serialized中每个dag_id有一份Airflow2.10.5序列化文件，对象的任务、边和属性与DAG清单一致。
+关键字段： serialized.dag_id、task_id、edge_info、schedule、tags
+容差： Airflow产生的非业务路径与时间字段不参与比较。
+失败边界： 任一DAG没有序列化文件，或结构中的任务集合与清单不同，本项失败。
+可观察证据： serialized/*.json与release/dag_inventory.csv
+客观硬性标准： DAG清单与序列化文件按dag_id一对一，任务集合可以互相核对。
+阈值： DAG缺失数、多余数和任务集合差异数都为0。
+
+7. 维护窗口材料可以接手
+分值： 10分
+优先级： 普通项
+所属层级： L1任务指令遵循层
+标准答案： release-summary.json保留release_request.json的窗口、影响服务、上线方式、观察时长、观察项、退回条件、命令与责任人。
+关键字段： change_window_start、change_window_end、affected_service、rollout_mode、observation_minutes、observation_metrics、rollback_condition、rollback_command、release_owner
+容差： JSON键顺序可以变化，字段值不可变化。
+失败边界： 维护窗口或退回安排任一关键字段缺失，本项失败。
+可观察证据： release/release-summary.json
+客观硬性标准： 结构化维护窗口字段与输入逐字段一致。
+阈值： 关键字段差异数为0。
+
+8. 输入追溯和平台边界清楚
+分值： 5分
+优先级： 辅助项
+所属层级： L10抗投机与反作弊层
+标准答案： 候选DAG的租户、阶段、Dataset和发布字段都能回连业务输入，DAG解析期间只读取随包配置。
+关键字段： CONFIG_PATH、tenant_id、task_id、dataset_uri、release_owner
+容差： 输入转换可在代码内完成，但不得用与材料无关的租户、任务或Dataset。
+失败边界： 交付中出现输入外租户或Dataset，或DAG解析时读取外部状态，本项失败。
+可观察证据： dags/tenant_factory.py、dags/tenant_factory_config.json和release目录
+客观硬性标准： 业务字段可以逐项追溯，DAG解析代码不含外部服务读取。
+阈值： 无来源业务字段数和解析期外部读取数都为0。

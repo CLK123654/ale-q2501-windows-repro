@@ -1,0 +1,11 @@
+操作系统： Windows11加WSL2。
+
+主软件： ApacheAirflow2.10.5，在WSL2的Ubuntu24.04中运行。
+
+代码执行依赖： Python3.11、PowerShell7、ApacheAirflow自带的DagBag、SerializedDAG和get_parsing_context接口。文件统一使用UTF-8。
+
+CPU与GPU： DAG解析和序列化只需CPU，不使用GPU。
+
+磁盘： 工作目录需要容纳Airflow环境、输入材料、候选DAG和序列化结构。
+
+超时： 单次DAG读取或序列化超过维护窗口时，终止当次运行并保留Airflow导入错误供编排组处理。

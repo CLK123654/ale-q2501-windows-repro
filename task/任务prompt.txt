@@ -1,0 +1,7 @@
+数据平台编排组准备在本周切换租户日批DAG工厂。现行代码会改变任务的先后关系，循环结束后又只留下一张DAG。Scheduler定向解析某个dag_id时仍会构造其他租户，这次发布因此暂停。
+
+tenant_registry.csv是已确认的租户调度、责任人和Dataset出口，stage_catalog.csv保存业务阶段的实际次序。factory_policy.json给出DAG命名、启动日期和构造规则，release_request.json记录维护窗口、观察项和退回安排。current_dag是需要更正的版本。
+
+在ApacheAirflow中整理候选DAG工厂。每个租户注册为独立DAG，start后的任务按目录顺序串联，finish只发布该租户的Dataset。读取get_parsing_context后，在构造DAG之前跳过无关租户。
+
+发布包留下候选DAG、随包配置、DAG清单、定向解析清单和Airflow2.10.5生成的序列化结构。编排组用它们核对任务链与Dataset出口，值班人再安排切换、观察和退回。

@@ -1,0 +1,6 @@
+1. 进入WSL2中的ApacheAirflow2.10.5环境，将租户登记、阶段目录和工厂规则整理为随DAG发布的配置。
+2. 编辑动态DAG工厂，按阶段目录创建单链任务，为finish绑定对应Dataset。
+3. 使用get_parsing_context取得当前dag_id，在调用构造函数前跳过其他租户，再用实际dag_id写入globals。
+4. 使用DagBag读取候选目录，查看DAG名称、调度、任务依赖、owner、tag和Dataset出口。
+5. 逐个dag_id读取定向解析结果，整理每次实际构造的DAG与任务数。
+6. 调用SerializedDAG导出各DAG结构，与DAG清单和维护窗口安排一并留给编排组。

@@ -1,0 +1,52 @@
+{
+  "skill": "humanizer-zh",
+  "result": "PASS",
+  "reviewed_scopes": [
+    "任务名称",
+    "任务概要",
+    "任务prompt",
+    "关键动作",
+    "评分表",
+    "环境依赖",
+    "软件步骤",
+    "输入材料中的自然语言",
+    "Reference中的用户可见文字",
+    "关键标准答案工作簿全部自然语言",
+    "任务规格工作簿全部自然语言"
+  ],
+  "scores": {
+    "直接性": 9,
+    "节奏": 9,
+    "信任度": 10,
+    "真实性": 9,
+    "精炼度": 9,
+    "total": 46
+  },
+  "minimum_total": 45,
+  "notes": [
+    "标题沿用测站回传、游标等待和可延期任务业务，删去恢复分流校核等连续术语。",
+    "Prompt从凌晨回传窗口和worker被占用的问题进入，四段长度不同，最后落到平台编排组、边缘运行组与发布值班的实际使用。",
+    "删除固定案例矩阵、固定终态答案、validation汇总、测试器、双目录和Windows证明，题面只保留业务工作。",
+    "测站、起始游标、等待时限、回传状态、维护窗和退回条件均来自业务输入，不使用无来源数字。",
+    "Airflow实际读取DagBag对象，Sensor通过TaskDeferred延期，Trigger异步读取文件，没有把普通Python轮询冒充Triggerer运行。",
+    "Reference只含候选DAG、Sensor、Trigger、事件处理账、测站回执、延期计划、序列化参数、DAG结构、维护窗说明和目录说明。",
+    "人工复读未发现宣传腔、否定式排比、模糊权威、伪引用、软件能力幻觉、无消费者交付物或推理断裂。"
+  ],
+  "reviewed_artifacts_sha256": {
+    "任务名称.txt": "e23440532b26d4700f5d8e9624cdd1e752c0ce4dc25ad2e736382308d4fd0925",
+    "任务概要.txt": "372f2b59d931d1dc3cf2c9b2563ec01c45947f0ee785d006ff76b7a621ca3c61",
+    "任务prompt.txt": "32daf326c910d8aa10aaa79115695969e77db562c1533b19534295524a68c756",
+    "关键动作.txt": "c348f5839b2bb29873074fb0489947b1b69c7a3af7ebf912f04bc2ed888bbf9e",
+    "评分表.txt": "82603f2ccd2aab0a6d22024b0f6d20adf86dbae744dd511e9b535936776e42aa",
+    "环境依赖.txt": "dbc9b9f4d54d75d30be6358db33ea4832c27ed92953e830840590e26fdef7842",
+    "相关专业软件的关键步骤.txt": "d6f60f086b20513758d35ace43b8494a112d79284471a0aeaa21d4fdd66aed8d",
+    "task_fields.json": "b5e3834a073ffd0e6b3b131b014ebd9a901646bc6a768688602c3ecd6d3fac2a",
+    "输入数据包.zip": "129a2f4db8ccab2bfce6428ee978ba0d0b5962b5e7d36060db8a75c352b3ae4e",
+    "reference.zip": "8dc2fad81a4bb7e0e2ad581f60ec214f267b7aefe0010ee0527d5d81fc5ea901",
+    "关键标准答案.xlsx": "0015c7ca9adece112c46fb5299d5ee540e5c7f749752b584348454cf0facc1a2",
+    "任务规格转化.xlsx": "d028674f60ecff919d73b5af0887b191b9e66b8e6e38ef87e2d05caf4c791ef5",
+    "ALE-专家数据作业表_q2397.csv": "c155d3ae2ba764d983b297f6339e6892df6e261fe353ae2da6001941bb097a08"
+  },
+  "online_ai_field_used_as_conclusion": false,
+  "reviewed_on": "2026-08-13"
+}
